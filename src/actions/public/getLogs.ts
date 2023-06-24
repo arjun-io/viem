@@ -2,10 +2,6 @@ import type { AbiEvent, Address, Narrow } from 'abitype'
 
 import type { PublicClient } from '../../clients/createPublicClient.js'
 import type { Transport } from '../../clients/transports/createTransport.js'
-import {
-  DecodeLogDataMismatch,
-  DecodeLogTopicsMismatch,
-} from '../../errors/abi.js'
 import type { BlockNumber, BlockTag } from '../../types/block.js'
 import type { Chain } from '../../types/chain.js'
 import type {
@@ -15,13 +11,12 @@ import type {
 import type { Log } from '../../types/log.js'
 import type { Hash, LogTopic } from '../../types/misc.js'
 import type { RpcLog } from '../../types/rpc.js'
-import { decodeEventLog } from '../../utils/abi/decodeEventLog.js'
 import {
   type EncodeEventTopicsParameters,
   encodeEventTopics,
 } from '../../utils/abi/encodeEventTopics.js'
 import { numberToHex } from '../../utils/encoding/toHex.js'
-import { formatLog } from '../../utils/formatters/log.js'
+import { decodeRpcLog } from '../../utils/formatters/log.js'
 
 export type GetLogsParameters<
   TAbiEvent extends AbiEvent | undefined = undefined,
@@ -138,33 +133,6 @@ export async function getLogs<
   }
 
   return logs
-    .map((log) => {
-      try {
-        const { eventName, args } = event
-          ? decodeEventLog({
-              abi: [event] as [AbiEvent],
-              data: log.data,
-              topics: log.topics as any,
-              strict,
-            })
-          : { eventName: undefined, args: undefined }
-        return formatLog(log, { args, eventName })
-      } catch (err) {
-        let eventName
-        let isUnnamed
-        if (
-          err instanceof DecodeLogDataMismatch ||
-          err instanceof DecodeLogTopicsMismatch
-        ) {
-          // If strict mode is on, and log data/topics do not match event definition, skip.
-          if (strict) return
-          eventName = err.abiItem.name
-          isUnnamed = err.abiItem.inputs?.some((x) => !('name' in x && x.name))
-        }
-
-        // Set args to empty if there is an error decoding (e.g. indexed/non-indexed params mismatch).
-        return formatLog(log, { args: isUnnamed ? [] : {}, eventName })
-      }
-    })
+    .map((log) => decodeRpcLog(log, { event: event as AbiEvent, strict }))
     .filter(Boolean) as unknown as GetLogsReturnType<TAbiEvent, TStrict>
 }

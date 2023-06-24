@@ -98,6 +98,7 @@ export type GetContractParameters<
 }
 
 export type GetContractReturnType<
+  TTransport extends Transport = Transport,
   TAbi extends Abi | readonly unknown[] = Abi,
   TPublicClient extends PublicClient | unknown = unknown,
   TWalletClient extends WalletClient | unknown = unknown,
@@ -278,6 +279,7 @@ export type GetContractReturnType<
               watchEvent: {
                 [EventName in _EventNames]: GetWatchEvent<
                   _Narrowable,
+                  TTransport,
                   TAbi,
                   EventName
                 >
@@ -406,7 +408,13 @@ export function getContract<
   TPublicClient,
   TWalletClient,
   TAddress
->): GetContractReturnType<TAbi, TPublicClient, TWalletClient, TAddress> {
+>): GetContractReturnType<
+  TTransport,
+  TAbi,
+  TPublicClient,
+  TWalletClient,
+  TAddress
+> {
   const hasPublicClient = publicClient !== undefined && publicClient !== null
   const hasWalletClient = walletClient !== undefined && walletClient !== null
 
@@ -625,6 +633,7 @@ export function getContract<
   contract.abi = abi
 
   return contract as unknown as GetContractReturnType<
+    TTransport,
     TAbi,
     TPublicClient,
     TWalletClient,
@@ -887,6 +896,7 @@ type GetEventFilter<
 
 type GetWatchEvent<
   Narrowable extends boolean,
+  TTransport extends Transport,
   TAbi extends Abi | readonly unknown[],
   TEventName extends string,
   TAbiEvent extends AbiEvent = TAbi extends Abi
@@ -895,7 +905,7 @@ type GetWatchEvent<
   Args = AbiEventParametersToPrimitiveTypes<TAbiEvent['inputs']>,
   Options = Prettify<
     Omit<
-      WatchContractEventParameters<TAbi, TEventName>,
+      WatchContractEventParameters<TTransport, TAbi, TEventName>,
       'abi' | 'address' | 'args' | 'eventName'
     >
   >,

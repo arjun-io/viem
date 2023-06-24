@@ -1300,7 +1300,7 @@ export type PublicActions<
     TEventName extends string,
     TStrict extends boolean | undefined = undefined,
   >(
-    args: WatchContractEventParameters<TAbi, TEventName, TStrict>,
+    args: WatchContractEventParameters<TTransport, TAbi, TEventName, TStrict>,
   ) => WatchContractEventReturnType
   /**
    * Watches and returns emitted [Event Logs](https://viem.sh/docs/glossary/terms.html#event-log).
